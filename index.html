@@ -511,8 +511,69 @@
             btn.innerHTML = "⬇️ 从云端下载覆盖本机"; btn.disabled = false;
         }
 
-        async function callAIMentor(mode) { /* 模拟AI交互结构，不再强制填入庞大的逻辑 */ alert("导师功能就绪，点击执行网络请求..."); }
+      // --- 🧠 真正的 AI 战略导师引擎 ---
+        async function callAIMentor(mode) {
+            const btn = mode === 'daily' ? document.getElementById('aiBtnDaily') : document.getElementById('aiBtnWeekly');
+            const aiBox = document.getElementById('aiResponseCard');
+            const reflection = document.getElementById('reflectionInput').value.trim();
+            
+            // 自动收集当前的 OKR 战略进度，准备喂给 AI
+            let goalStatus = okrGoals.map(g => `[${g.type==='month'?'大目标':(g.type==='week'?'中目标':'小目标')}] ${g.name}: 进度(${g.current}/${g.max})`).join('; ');
+
+            btn.innerHTML = "🧠 正在连接导师..."; 
+            btn.disabled = true;
+
+            // 根据点击的按钮，构建不同的核心指令 (Prompt)
+            let promptText = "";
+            if(mode === 'daily') {
+                promptText = `你现在是严厉的考研导师。当前用户大中小目标进度为：【${goalStatus}】。他今天的思考/实际执行情况：【${reflection||'无'}】。请简短评价他今天是否有力地推进了关键目标，并给出明日的一句话指令。100字内。`;
+            } else {
+                promptText = `你现在是顶级考研战略规划师。用户本周复盘：【${reflection||'无'}】。当前全局战略沙盘：【${goalStatus}】。请进行深度周度复盘（Markdown排版）：1. 风险预警：小目标的完成情况，是否足以支撑本周的中目标甚至本月的核心大目标？有没有烂尾风险？2. 战略倾斜：建议下周把精力倾斜到哪一个落后的目标上？`;
+            }
+
+            // 获取 API Key
+            let apiKey = localStorage.getItem('gemini_api_key');
+            if(!apiKey) { 
+                apiKey = prompt("⚠️ 首次唤醒导师，请输入你的专属 Gemini API 密钥："); 
+                if(apiKey) {
+                    localStorage.setItem('gemini_api_key', apiKey.trim()); 
+                } else { 
+                    btn.innerHTML = mode === 'daily' ? "🌙 睡前小结" : "📊 周度战略复盘"; 
+                    btn.disabled = false; 
+                    return; 
+                } 
+            }
+            
+            try {
+                // 调用免费的 Gemini 1.5 接口
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+                });
+                const resData = await response.json();
+                
+                if(resData.candidates) {
+                    // 将 AI 传回来的 Markdown 文本转换并显示出来
+                    let aiText = resData.candidates[0].content.parts[0].text;
+                    aiBox.innerHTML = `<strong>导师反馈：</strong><br><br>` + aiText.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                    aiBox.style.display = 'block';
+                } else if (resData.error) {
+                    alert("❌ 导师连接失败: " + resData.error.message);
+                    if(resData.error.code === 400 || resData.error.message.includes("API key")) {
+                        localStorage.removeItem('gemini_api_key'); // 自动清理失效的 Key
+                    }
+                }
+            } catch(e) { 
+                alert("❌ 网络连接错误！请确保你的网络环境能正常访问外部接口。"); 
+            }
+            
+            // 恢复按钮初始状态
+            btn.innerHTML = mode === 'daily' ? "🌙 睡前小结" : "📊 周度战略复盘"; 
+            btn.disabled = false;
+        }
     </script>
 </body>
 </html>
+
 
