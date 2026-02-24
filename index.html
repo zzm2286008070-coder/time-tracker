@@ -9,15 +9,9 @@
     <style>
         :root { --primary: #007aff; --bg: #f2f2f7; --card-bg: #ffffff; --text-main: #1c1c1e; --text-sub: #8e8e93; --ai-color: #5e5ce6; }
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); margin: 0; padding: 20px; color: var(--text-main); padding-bottom: 50px;}
-        
-        .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; }
         h1 { font-size: 24px; margin: 0; }
-        
-        /* 日期切换器样式 */
-        .date-selector { display: flex; align-items: center; background: var(--card-bg); border-radius: 20px; padding: 4px 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-        .date-btn { background: none; border: none; font-size: 16px; color: var(--primary); padding: 5px 10px; cursor: pointer; width: auto; margin: 0;}
-        .date-btn:disabled { color: #ccc; }
-        #dateDisplay { font-size: 14px; font-weight: bold; width: 65px; text-align: center; }
+        .date-display { font-size: 14px; color: var(--text-sub); font-weight: bold; }
         
         .card { background: var(--card-bg); border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
         .card h2 { font-size: 18px; margin: 0 0 15px 0; border-bottom: 1px solid #eee; padding-bottom: 10px; display: flex; align-items: center; justify-content: space-between;}
@@ -26,16 +20,6 @@
         textarea:focus, input:focus { border-color: var(--primary); }
         button { background: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; font-size: 16px; margin-top: 10px; cursor: pointer; width: 100%; font-weight: bold; }
         
-        /* 统计看板样式 */
-        .stats-grid { display: flex; justify-content: space-between; gap: 10px; margin-top: 10px;}
-        .stat-box { flex: 1; background: #f9f9eb; border-radius: 12px; padding: 15px 10px; text-align: center; }
-        .stat-box:nth-child(1) { background: #fff0f0; } /* 高效 - 红 */
-        .stat-box:nth-child(2) { background: #f0f8ff; } /* 摸鱼 - 蓝 */
-        .stat-box:nth-child(3) { background: #f5f5f5; } /* 偏离 - 灰 */
-        .stat-num { font-size: 24px; font-weight: bold; margin-bottom: 5px; color: var(--text-main);}
-        .stat-label { font-size: 12px; color: var(--text-sub); }
-        .stats-desc { font-size: 13px; color: var(--text-sub); margin-top: 15px; text-align: center; }
-
         /* 时间轴样式 */
         .timeline { display: flex; flex-direction: column; gap: 12px; }
         .time-slot { display: flex; background: var(--bg); border-radius: 12px; overflow: hidden; cursor: pointer;}
@@ -46,12 +30,14 @@
         .actual { font-size: 15px; font-weight: 500; color: var(--text-main); }
         .tag { display: inline-block; padding: 2px 6px; border-radius: 4px; font-size: 12px; margin-right: 5px; }
         
-        /* 弹窗及AI样式 */
+        /* 弹窗样式 */
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); align-items: center; justify-content: center; z-index: 100;}
         .modal-content { background: white; padding: 25px; border-radius: 20px; width: 85%; max-width: 320px; }
         .tag-group { display: flex; gap: 10px; margin: 15px 0; }
         .tag-btn { flex: 1; padding: 8px; border: 1px solid #ddd; border-radius: 8px; background: white; font-size: 14px; cursor: pointer; }
         .tag-btn.selected { border-color: var(--primary); background: #e5f0ff; color: var(--primary); font-weight: bold; }
+        
+        /* AI专属样式 */
         .btn-ai { background: linear-gradient(135deg, #5e5ce6, #007aff); box-shadow: 0 4px 12px rgba(94,92,230,0.3); }
         .ai-response { display: none; background: #f2f2fa; border-left: 4px solid var(--ai-color); padding: 15px; border-radius: 0 12px 12px 0; margin-top: 15px; font-size: 14px; line-height: 1.6; color: #333; }
         .pro-badge { background: #1c1c1e; color: #ffd700; font-size: 10px; padding: 2px 6px; border-radius: 4px; vertical-align: middle; margin-left: 5px;}
@@ -60,47 +46,26 @@
 <body>
 
     <div class="header">
-        <h1>✨ 时间追踪</h1>
-        <div class="date-selector">
-            <button class="date-btn" onclick="changeDate(-1)">◀</button>
-            <span id="dateDisplay">加载中</span>
-            <button class="date-btn" onclick="changeDate(1)" id="nextDayBtn">▶</button>
-        </div>
-    </div>
-
-    <div class="card" id="statsModule">
-        <h2>📊 近 7 天执行力雷达</h2>
-        <div class="stats-grid">
-            <div class="stat-box">
-                <div class="stat-num" id="statFire">0</div>
-                <div class="stat-label">🔥 高效专注</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-num" id="statWater">0</div>
-                <div class="stat-label">💧 摸鱼休息</div>
-            </div>
-            <div class="stat-box">
-                <div class="stat-num" id="statTarget">0</div>
-                <div class="stat-label">🎯 偏离目标</div>
-            </div>
-        </div>
-        <div class="stats-desc" id="statsDesc">正在计算你的近期成就...</div>
+        <h1>✨ 追踪与智能复盘</h1>
+        <div class="date-display" id="dateDisplay">加载中...</div>
     </div>
 
     <div class="card">
-        <h2>🎯 核心目标 <span style="font-size: 12px; color: gray; font-weight: normal;">(全量同步)</span></h2>
+        <h2>🎯 本周核心目标</h2>
         <textarea id="goalInput" rows="2" placeholder="写下你近期的目标（越具体越好，AI会严格监督）..."></textarea>
     </div>
 
     <div class="card">
-        <h2 id="timelineTitle">📅 今日打卡</h2>
+        <h2>📅 今日打卡 (含晚间细分)</h2>
         <div class="timeline" id="timelineContainer"></div>
     </div>
 
     <div class="card" style="border: 2px solid #eee;">
-        <h2>🌙 每日睡前思考 <span style="font-size: 12px; color: gray; font-weight: normal;" id="aiHint">22:30 提醒</span></h2>
-        <textarea id="reflectionInput" rows="3" placeholder="这一天过得怎么样？晚上黄金时间有效利用了吗？"></textarea>
-        <button id="aiBtn" class="btn-ai" onclick="callAIMentor()">✨ 召唤 AI 导师纠偏 <span class="pro-badge">智能引擎</span></button>
+        <h2>🌙 每日睡前思考 <span style="font-size: 12px; color: gray; font-weight: normal;">22:30 提醒</span></h2>
+        <textarea id="reflectionInput" rows="3" placeholder="今天过得怎么样？晚间19:00-22:30这段黄金时间有效利用了吗？"></textarea>
+        
+        <button id="aiBtn" class="btn-ai" onclick="callAIMentor()">✨ 召唤 AI 导师纠偏 <span class="pro-badge">PRO内核</span></button>
+        
         <div id="aiResponseCard" class="ai-response"></div>
     </div>
 
@@ -119,11 +84,13 @@
     </div>
 
     <script>
+        // --- 细化后的晚间黄金时间段 ---
         const eveningSlots = [
             {time:"19:00", session:"19:00-21:00", planned:"课后复习 / 黄金期上"},
             {time:"21:00", session:"21:00-22:30", planned:"总结提升 / 黄金期下"} 
         ];
 
+        // --- 完美匹配你的教务处课表 ---
         const mySchedule = {
             1: [{time:"08:00", session:"1-2节", planned:"物理化学(上)"}, {time:"10:00", session:"3-4节", planned:"中学化学教学设计"}, {time:"14:00", session:"7-8节", planned:"教学课件制作"}, {time:"16:00", session:"9-10节", planned:"有机化学(下)"}, ...eveningSlots],
             2: [{time:"08:00", session:"1-2节", planned:"化学教学论"}, {time:"10:00", session:"3-4节", planned:"马克思主义基本原理"}, {time:"14:00", session:"7-8节", planned:"形势与政策"}, {time:"16:00", session:"9-10节", planned:"习近平新时代中国特色..."}, ...eveningSlots],
@@ -134,99 +101,25 @@
             0: [{time:"全天", session:"周末", planned:"休息 / 准备"}, ...eveningSlots]
         };
 
-        let viewedDate = new Date(); // 当前查看的日期
-        let todayDate = new Date();  // 真实的今天
-        
         let currentSlotIndex = -1;
         let selectedTag = "";
         let storageKey = "";
 
-        // 生成存储Key的统一函数 (保证兼容V6的数据)
-        function getStorageKey(dateObj) {
-            return `activities_v6_${dateObj.getFullYear()}_${dateObj.getMonth()+1}_${dateObj.getDate()}`;
-        }
-
         window.onload = function() {
-            // 全局目标是通用的，不随日期变化
+            const now = new Date();
+            // 注意这里加了 v5 前缀，强制刷新今天的课表缓存
+            storageKey = `activities_v5_${now.getFullYear()}_${now.getMonth()+1}_${now.getDate()}`;
+            document.getElementById('dateDisplay').innerText = `${now.getMonth()+1}月${now.getDate()}日`;
+            
             document.getElementById('goalInput').value = localStorage.getItem('myGoal_Ziming') || "";
-            document.getElementById('goalInput').addEventListener('input', e => localStorage.setItem('myGoal_Ziming', e.target.value));
-            
-            updateUIForDate();
-            calculateStats();
-        }
-
-        // --- 核心：切换日期功能 ---
-        function changeDate(offset) {
-            viewedDate.setDate(viewedDate.getDate() + offset);
-            updateUIForDate();
-        }
-
-        function updateUIForDate() {
-            // 控制不能浏览到“明天”以后
-            todayDate = new Date();
-            let isToday = (viewedDate.toDateString() === todayDate.toDateString());
-            document.getElementById('nextDayBtn').disabled = isToday;
-            
-            // 更新标题和显示
-            let month = viewedDate.getMonth() + 1;
-            let day = viewedDate.getDate();
-            document.getElementById('dateDisplay').innerText = `${month}月${day}日`;
-            document.getElementById('timelineTitle').innerText = isToday ? "📅 今日打卡" : "📜 历史记录";
-            document.getElementById('aiHint').innerText = isToday ? "22:30 提醒" : "历史思考";
-            
-            storageKey = getStorageKey(viewedDate);
-            
-            // 读取当天的思考
             document.getElementById('reflectionInput').value = localStorage.getItem(storageKey + '_reflection') || "";
-            // 清理旧的监听器并绑定新日期的监听
-            let refInput = document.getElementById('reflectionInput');
-            let newRefInput = refInput.cloneNode(true);
-            refInput.parentNode.replaceChild(newRefInput, refInput);
-            newRefInput.addEventListener('input', e => localStorage.setItem(storageKey + '_reflection', e.target.value));
+            
+            document.getElementById('goalInput').addEventListener('input', e => localStorage.setItem('myGoal_Ziming', e.target.value));
+            document.getElementById('reflectionInput').addEventListener('input', e => localStorage.setItem(storageKey + '_reflection', e.target.value));
 
-            // 隐藏可能残留的 AI 导师回答
-            document.getElementById('aiResponseCard').style.display = 'none';
-            document.getElementById('aiBtn').innerHTML = "✨ 召唤 AI 导师纠偏 <span class='pro-badge'>智能引擎</span>";
-
-            loadActivities(viewedDate.getDay());
+            loadActivities(now.getDay());
         }
 
-        // --- 近7日成就统计逻辑 ---
-        function calculateStats() {
-            let fire = 0, water = 0, target = 0, total = 0;
-            
-            for(let i = 0; i < 7; i++) {
-                let d = new Date();
-                d.setDate(d.getDate() - i);
-                let key = getStorageKey(d);
-                let saved = localStorage.getItem(key);
-                if(saved) {
-                    let data = JSON.parse(saved);
-                    data.forEach(slot => {
-                        if(slot.actual) total++;
-                        if(slot.tag === '🔥 高效') fire++;
-                        if(slot.tag === '💧 摸鱼') water++;
-                        if(slot.tag === '🎯 偏离') target++;
-                    });
-                }
-            }
-            
-            // 写入看板动画效果
-            animateValue("statFire", fire);
-            animateValue("statWater", water);
-            animateValue("statTarget", target);
-            
-            let desc = total === 0 ? "近7天还没有打卡记录哦，今天开始行动吧！" : 
-                       fire > water ? "干得漂亮！过去一周你的专注力爆表，请继续保持！" : "最近摸鱼有点多哦，赶紧调整状态回归主线！";
-            document.getElementById('statsDesc').innerText = desc;
-        }
-
-        function animateValue(id, end) {
-            let obj = document.getElementById(id);
-            obj.innerText = end; // 简化处理，直接显示数字
-        }
-
-        // 加载与渲染时间轴
         function loadActivities(dayOfWeek) {
             let saved = localStorage.getItem(storageKey);
             if (saved) { renderTimeline(JSON.parse(saved)); } 
@@ -266,11 +159,10 @@
             data[currentSlotIndex].actual = val;
             data[currentSlotIndex].tag = selectedTag;
             renderTimeline(data);
-            calculateStats(); // 每次保存后实时刷新看板
             closeModal();
         }
 
-        // --- 智能 AI 导师 ---
+        // --- 呼叫 Gemini Pro 导师 ---
         async function callAIMentor() {
             const btn = document.getElementById('aiBtn');
             const aiBox = document.getElementById('aiResponseCard');
@@ -289,52 +181,40 @@
             const activities = JSON.parse(localStorage.getItem(storageKey));
             let scheduleText = activities.map(a => `${a.time}(${a.session}) 实际做了:[${a.actual||'未记录'}] 状态:[${a.tag||'无'}]`).join('; ');
 
-            btn.innerHTML = "🧠 正在连接AI大脑...";
+            btn.innerHTML = "🧠 Pro 核心正在深度评估...";
             btn.disabled = true;
 
-            const promptText = `你现在是严厉且专业的私人时间管理导师。我知道用户在追求极高的自律性。当前查看的日期是：${viewedDate.getMonth()+1}月${viewedDate.getDate()}日。用户的近期核心目标是：【${goal}】。当日时间流水账是：【${scheduleText}】。睡前反思是：【${reflection}】。
-            请执行评估：
-            1. 目标诊断：实际行动是否有效支撑了近期目标？晚间时段表现如何？
-            2. 纠偏建议：给出明确指令。
-            回复要求：单刀直入，一针见血。字数控制在200-250字以内，使用适当的emoji排版。`;
+            const promptText = `你现在是严厉且专业的私人时间管理导师。我的近期核心目标是：【${goal}】。我今天的时间流水账是：【${scheduleText}】。我的睡前反思是：【${reflection}】。
+            请执行以下评估（重点关注19:00到22:30的晚间时段）：
+            1. 目标诊断：我今天的实际行动是否有效支撑了我的近期目标？如果出现“偏离”或晚间时段在“摸鱼”，请严厉指出。
+            2. 纠偏建议：针对我偏离目标的地方，给出明天立刻可以执行的明确指令。
+            回复要求：不要客套，单刀直入，一针见血。字数控制在200-250字以内，使用适当的emoji排版。`;
 
-            const modelsToTry = ['gemini-1.5-pro-002', 'gemini-1.5-pro-latest', 'gemini-1.5-flash'];
-            let finalResponseText = "";
-            let apiErrorMsg = "";
-
-            for (let model of modelsToTry) {
-                try {
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
-                    });
-                    const resData = await response.json();
-                    
-                    if (resData.error) {
-                        if (resData.error.code === 404 || resData.error.message.includes("not found")) continue; 
-                        else if (resData.error.code === 400 && resData.error.message.includes("API key not valid")) {
-                            localStorage.removeItem('gemini_api_key'); 
-                            apiErrorMsg = "检测到 API 密钥无效，已清除，请重试。";
-                            break;
-                        } else { apiErrorMsg = resData.error.message; break; }
-                    } else {
-                        finalResponseText = resData.candidates[0].content.parts[0].text;
-                        apiErrorMsg = ""; 
-                        break; 
+            try {
+                // 修复接口报错：将请求模型精准指向 gemini-1.5-pro-latest
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro-latest:generateContent?key=${apiKey}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+                });
+                const resData = await response.json();
+                
+                if(resData.error) {
+                    alert("发生错误：" + resData.error.message);
+                    if(resData.error.code === 400 || resData.error.code === 403 || resData.error.message.includes("API key not valid")) {
+                        localStorage.removeItem('gemini_api_key'); 
+                        alert("检测到 API 密钥可能无效，已清除，请下次点击重填。");
                     }
-                } catch (e) {
-                    apiErrorMsg = "网络连接异常，这通常是因为 API 需要特殊的网络环境才能直连。";
-                    break;
+                } else {
+                    const text = resData.candidates[0].content.parts[0].text;
+                    aiBox.innerHTML = `<strong>导师说：</strong><br>` + text.replace(/\n/g, '<br>');
+                    aiBox.style.display = 'block';
                 }
+            } catch (e) {
+                alert("网络连接异常，这通常是因为 API 需要特殊的网络环境才能直连。");
             }
-
-            if (finalResponseText) {
-                aiBox.innerHTML = `<strong>导师点评：</strong><br>` + finalResponseText.replace(/\n/g, '<br>');
-                aiBox.style.display = 'block';
-            } else if (apiErrorMsg) { alert("发生错误：" + apiErrorMsg); }
             
-            btn.innerHTML = "✨ 重新召唤 AI 导师纠偏 <span class='pro-badge'>智能引擎</span>";
+            btn.innerHTML = "✨ 重新召唤 AI 导师纠偏 <span class='pro-badge'>PRO内核</span>";
             btn.disabled = false;
         }
     </script>
