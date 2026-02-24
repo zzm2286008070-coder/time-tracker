@@ -14,7 +14,7 @@
         
         .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
         h1 { font-size: 22px; margin: 0; }
-        .week-badge { background: #ff3b30; color: white; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; margin-top: 5px; display: inline-block;}
+        .week-badge { background: #1c1c1e; color: white; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; margin-top: 5px; display: inline-block;}
         
         .top-tools { display: flex; gap: 10px; flex-direction: column; align-items: flex-end;}
         .icon-btn-group { display: flex; gap: 10px; }
@@ -36,6 +36,7 @@
         .prog-fill { background: linear-gradient(90deg, #34c759, #32ade6); height: 100%; width: 0%; transition: width 0.4s ease-out; }
         .prog-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 2px;}
         .mini-btn { background: #f2f2f7; color: var(--primary); border: none; border-radius: 6px; padding: 4px 12px; font-size: 12px; font-weight: bold; cursor: pointer; }
+        .del-prog-btn { color: #ff3b30; font-size: 10px; cursor: pointer; margin-left: 5px; opacity: 0.5; }
         
         textarea, input[type="text"], input[type="password"] { width: 100%; border: 1px solid #ddd; border-radius: 8px; padding: 12px; font-size: 15px; box-sizing: border-box; outline: none; transition: 0.2s;}
         textarea:focus, input[type="text"]:focus, input[type="password"]:focus { border-color: var(--primary); }
@@ -73,7 +74,7 @@
 
     <div class="header">
         <div>
-            <h1>🚀 22408 控制台</h1>
+            <h1>🚀 控制台</h1>
             <div class="week-badge" id="weekDisplay">计算中...</div>
         </div>
         <div class="top-tools">
@@ -91,8 +92,9 @@
     </div>
 
     <div class="card" style="border: 2px solid #34c759;">
-        <h2>⚔️ 基础与进阶战役进度</h2>
+        <h2>⚔️ 基础与进阶进度</h2>
         <div class="prog-container" id="progContainer"></div>
+        <button class="mini-btn" style="width: 100%; margin-top: 15px; background: #e8f8f5; color: #34c759; padding: 10px;" onclick="addNewWeapon()">➕ 添加新项目</button>
     </div>
 
     <div class="card" id="statsModule">
@@ -116,7 +118,7 @@
 
     <div class="card" style="border: 2px solid #eee;">
         <h2>🌙 每日睡前复盘</h2>
-        <textarea id="reflectionInput" rows="2" placeholder="一句话总结今天的战略执行情况..."></textarea>
+        <textarea id="reflectionInput" rows="2" placeholder="一句话总结今天的执行情况..."></textarea>
         <button id="aiBtn" class="main-btn" style="background: linear-gradient(135deg, #1c1c1e, #3a3a3c);" onclick="callAIMentor()">✨ 召唤导师点评</button>
         <div id="aiResponseCard" class="ai-response"></div>
     </div>
@@ -167,7 +169,15 @@
     </div>
 
     <script>
-        const weaponList = [ { id: 'cprimer', name: 'C Primer Plus (章)', max: 17 }, { id: 'wengkai', name: '翁恺C语言 (集)', max: 100 }, { id: 'dahua', name: '大话数据结构 (章)', max: 9 }, { id: 'algo', name: '数据结构与算法 (集)', max: 173 } ];
+        const defaultWeapons = [ 
+            { id: 'cprimer', name: 'C Primer Plus (章)', max: 17 }, 
+            { id: 'wengkai', name: '翁恺C语言 (集)', max: 100 }, 
+            { id: 'dahua', name: '大话数据结构 (章)', max: 9 }, 
+            { id: 'algo', name: '数据结构与算法 (集)', max: 173 } 
+        ];
+        
+        let weaponList = JSON.parse(localStorage.getItem('custom_weapon_list')) || defaultWeapons;
+
         const eveningSlots = [ {time:"19:00", session:"黄金期上", planned:"课后复习 / 战略推进"}, {time:"21:00", session:"黄金期下", planned:"总结提升 / 战略推进"} ];
         const mySchedule = {
             1: [{time:"08:00", session:"1-2节", planned:"常规课"}, {time:"10:00", session:"3-4节", planned:"常规课"}, {time:"14:00", session:"7-8节", planned:"常规课"}, {time:"16:00", session:"9-10节", planned:"常规课"}, ...eveningSlots],
@@ -187,11 +197,47 @@
 
         function renderProgressBars() {
             const container = document.getElementById('progContainer'); container.innerHTML = '';
-            weaponList.forEach(weapon => {
+            weaponList.forEach((weapon, index) => {
                 let currentVal = parseInt(localStorage.getItem(`prog_${weapon.id}`)) || 0;
                 let pct = Math.min((currentVal / weapon.max) * 100, 100);
-                container.innerHTML += `<div class="prog-item"><div class="prog-header"><span>📘 ${weapon.name}</span><span><span id="val_${weapon.id}">${currentVal}</span> / ${weapon.max}</span></div><div class="prog-track"><div class="prog-fill" id="bar_${weapon.id}" style="width: ${pct}%;"></div></div><div class="prog-actions"><button class="mini-btn" onclick="updateProg('${weapon.id}', -1, ${weapon.max})">-1</button><button class="mini-btn" onclick="updateProg('${weapon.id}', 1, ${weapon.max})">+1</button></div></div>`;
+                container.innerHTML += `
+                    <div class="prog-item">
+                        <div class="prog-header">
+                            <span>📘 ${weapon.name} <span class="del-prog-btn" onclick="deleteWeapon(${index})" title="删除此项目">❌</span></span>
+                            <span><span id="val_${weapon.id}">${currentVal}</span> / ${weapon.max}</span>
+                        </div>
+                        <div class="prog-track"><div class="prog-fill" id="bar_${weapon.id}" style="width: ${pct}%;"></div></div>
+                        <div class="prog-actions">
+                            <button class="mini-btn" onclick="updateProg('${weapon.id}', -1, ${weapon.max})">-1</button>
+                            <button class="mini-btn" onclick="updateProg('${weapon.id}', 1, ${weapon.max})">+1</button>
+                        </div>
+                    </div>`;
             });
+        }
+
+        function addNewWeapon() {
+            let name = prompt("请输入新项目名称 (如：操作系统(章))：");
+            if (!name || name.trim() === "") return;
+            
+            let maxStr = prompt(`请输入【${name}】的总任务量 (如：8)：`);
+            let max = parseInt(maxStr);
+            if (isNaN(max) || max <= 0) return alert("总任务量必须是大于0的数字哦！");
+
+            let newId = 'custom_' + Date.now(); 
+            weaponList.push({ id: newId, name: name, max: max });
+            
+            localStorage.setItem('custom_weapon_list', JSON.stringify(weaponList));
+            renderProgressBars();
+        }
+
+        function deleteWeapon(index) {
+            if(confirm(`确定要删除【${weaponList[index].name}】吗？这会连同它的进度数据一起清除！`)) {
+                let w = weaponList[index];
+                localStorage.removeItem(`prog_${w.id}`); 
+                weaponList.splice(index, 1); 
+                localStorage.setItem('custom_weapon_list', JSON.stringify(weaponList)); 
+                renderProgressBars();
+            }
         }
 
         function updateProg(id, delta, max) {
@@ -211,8 +257,8 @@
             
             let diffDays = Math.floor((viewedDate - semesterStart) / (1000 * 60 * 60 * 24)); let weekNum = Math.floor(diffDays / 7) + 1;
             
-            // 🔥 修改文案：将“备战期”调整为热血的“挑战期”
-            document.getElementById('weekDisplay').innerText = (weekNum > 0 && weekNum <= 20) ? `跨考战役 • 第 ${weekNum} 周` : (weekNum <= 0 ? "⚔️ 挑战期" : "暑期集训");
+            // 🔥 这里更新了你想要的文案
+            document.getElementById('weekDisplay').innerText = (weekNum > 0 && weekNum <= 20) ? `⚔️ 挑战期 • 第 ${weekNum} 周` : (weekNum <= 0 ? "⚔️ 蓄力准备期" : "暑期集训");
             document.getElementById('dateDisplay').innerText = `${viewedDate.getMonth() + 1}月${viewedDate.getDate()}日`;
             document.getElementById('timelineTitle').innerText = (viewedDate.toDateString() === todayDate.toDateString()) ? "📅 今日阵地记录" : "📜 历史阵地记录";
             
@@ -317,4 +363,3 @@
     </script>
 </body>
 </html>
-
