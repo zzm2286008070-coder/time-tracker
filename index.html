@@ -7,8 +7,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="战略控制台">
     
-    <link rel="apple-touch-icon" href="app-logo.png">
-<link rel="icon" href="app-logo.png">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <link rel="icon" href="apple-touch-icon.png">
 
     <title>战略控制台</title>
     <style>
@@ -220,9 +220,10 @@
         const semesterStart = new Date('2026-03-02T00:00:00');
         let viewedDate = new Date(); 
         let todayDate = new Date(); 
-        let okrGoals = JSON.parse(localStorage.getItem('okr_goals')) || [ { id: 'g_m1', name: '大目标示例：逻辑学导论', type: 'month', current: 0, max: 17, parentId: '', targetWeek: null, targetDate: null } ];
+        let okrGoals = JSON.parse(localStorage.getItem('okr_goals')) || [];
         let pressTimer; let currentPressId = null; let currentSlotIndex = -1; let selectedTag = "";
 
+        // 【彻底复原的 6 节课时间表】
         const eveningSlots = [ {time:"19:00", session:"黄金期上", planned:"课后复习"}, {time:"21:00", session:"黄金期下", planned:"总结提升"} ];
         const mySchedule = {
             1: [{time:"08:00", session:"1-2节", planned:"常规课"}, {time:"10:00", session:"3-4节", planned:"常规课"}, {time:"14:00", session:"7-8节", planned:"常规课"}, {time:"16:00", session:"9-10节", planned:"常规课"}, ...eveningSlots],
@@ -237,7 +238,9 @@
 
         function getWeekNum(d) { let diff = Math.floor((d - semesterStart) / 86400000); return Math.floor(diff / 7) + 1; }
         function getDateStr(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
-        function getStorageKey(d) { return `okr_v1_${d.getFullYear()}_${d.getMonth()+1}_${d.getDate()}`; }
+        
+        // 【关键修复：重置回最初的数据库钥匙】
+        function getStorageKey(d) { return `okr_data_${d.getFullYear()}_${d.getMonth()+1}_${d.getDate()}`; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
 
         // ==========================================
@@ -256,7 +259,7 @@
                 if(!list.length) { container.innerHTML = '<p style="color:#ccc;font-size:12px;margin:0;font-style:italic;">暂无目标</p>'; return; }
                 
                 list.forEach(g => {
-                    let pct = (g.current / g.max) * 100;
+                    let pct = Math.min((g.current / g.max) * 100, 100);
                     container.innerHTML += `
                         <div class="prog-item" id="${g.id}" onmousedown="startP('${g.id}')" ontouchstart="startP('${g.id}')" onmouseup="stopP()" ontouchend="stopP()">
                             <div class="prog-header"><span>${g.name}</span><span>${g.current}/${g.max}</span></div>
@@ -324,7 +327,7 @@
         function stopP() { clearTimeout(pressTimer); if(currentPressId) { let el = document.getElementById(currentPressId); if(el) el.classList.remove('long-pressing'); currentPressId = null; } }
 
         // ==========================================
-        // UI 渲染与阵地记录引擎 (无强制限制版)
+        // UI 渲染与阵地记录引擎
         // ==========================================
         function changeDate(o) { viewedDate.setDate(viewedDate.getDate()+o); updateUIForDate(); }
         function jumpToDate() { viewedDate = new Date(document.getElementById('datePicker').value); updateUIForDate(); }
@@ -337,202 +340,4 @@
             document.getElementById('dateDisplay').innerText = `${viewedDate.getMonth()+1}月${viewedDate.getDate()}日`;
             
             const key = getStorageKey(viewedDate);
-            document.getElementById('diaryInput').value = localStorage.getItem(key+'_diary') || "";
-            document.getElementById('diaryInput').oninput = (e) => localStorage.setItem(key+'_diary', e.target.value);
-            document.getElementById('reflectionInput').value = localStorage.getItem(key+'_reflection') || "";
-            document.getElementById('reflectionInput').oninput = (e) => localStorage.setItem(key+'_reflection', e.target.value);
-            
-            document.getElementById('aiResponseCard').style.display = 'none';
-            renderGoals(); loadTimeline(); calculateStats();
-        }
-
-        function loadTimeline() {
-            const key = getStorageKey(viewedDate); const saved = localStorage.getItem(key);
-            const data = saved ? JSON.parse(saved) : mySchedule[viewedDate.getDay()].map(x => ({...x, actual:"", tag:""}));
-            const container = document.getElementById('timelineContainer'); container.innerHTML = '';
-            data.forEach((s, idx) => {
-                container.innerHTML += `<div class="time-slot" onclick="openRec(${idx})"><div class="time-label">${s.time}<span>${s.session}</span></div><div class="slot-content"><div class="planned">🗓️ ${s.planned || '无计划'}</div><div class="actual">${s.tag ? `<span class="tag">${s.tag}</span>` : ''}${s.actual || '<span style="color:#ccc;">点击修改/记录</span>'}</div></div></div>`;
-            }); localStorage.setItem(key, JSON.stringify(data));
-        }
-
-        function openRec(idx) {
-            currentSlotIndex = idx; const d = JSON.parse(localStorage.getItem(getStorageKey(viewedDate)))[idx];
-            document.getElementById('plannedInput').value = d.planned || ""; 
-            document.getElementById('actualInput').value = d.actual || "";
-            selectedTag = d.tag || ""; 
-            document.querySelectorAll('.tag-btn').forEach(b => b.classList.toggle('selected', b.innerText === selectedTag));
-            document.getElementById('recordModal').style.display = 'flex';
-        }
-
-        function selectTag(t) { 
-            selectedTag = selectedTag === t ? "" : t; 
-            document.querySelectorAll('.tag-btn').forEach(b => b.classList.toggle('selected', b.innerText === selectedTag)); 
-        }
-
-        function saveActivity() {
-            const key = getStorageKey(viewedDate); let d = JSON.parse(localStorage.getItem(key));
-            d[currentSlotIndex] = { ...d[currentSlotIndex], planned: document.getElementById('plannedInput').value.trim(), actual: document.getElementById('actualInput').value.trim(), tag: selectedTag };
-            localStorage.setItem(key, JSON.stringify(d)); loadTimeline(); calculateStats(); closeModal('recordModal');
-        }
-
-        function calculateStats() {
-            let hc=0, df=0, ws=0; 
-            for(let i=0; i<7; i++){ 
-                let d = new Date(viewedDate); d.setDate(d.getDate()-i); let s = localStorage.getItem(getStorageKey(d)); 
-                if(s) JSON.parse(s).forEach(x=>{ if(x.tag==='💻 硬核')hc++; if(x.tag==='🛡️ 防御')df++; if(x.tag==='💧 纯水')ws++; }); 
-            }
-            document.getElementById('statHardcore').innerText=hc; document.getElementById('statDefense').innerText=df; document.getElementById('statWaste').innerText=ws;
-        }
-
-        // ==========================================
-        // 分类检索引擎
-        // ==========================================
-        function openSearch() { document.getElementById('searchModal').style.display='flex'; document.getElementById('searchInput').focus(); }
-        
-        function performSearch() {
-            let kw = document.getElementById('searchInput').value.toLowerCase().trim(); const res = document.getElementById('searchResults'); res.innerHTML = ''; 
-            if(!kw) { res.innerHTML = '<p style="color:gray; font-size: 13px;">输入内容开始搜索...</p>'; return; }
-            
-            let hG='', hA='', hD='', hR=''; let c=0;
-            
-            // 搜目标
-            okrGoals.forEach(g => { if(g.name.toLowerCase().includes(kw)) { c++; hG += `<div class="search-res-item" onclick="closeModal('searchModal')"><div class="search-res-date">🎯 ${g.type==='month'?'大目标':(g.type==='week'?'中目标':'小目标')}</div><div>${g.name} (${g.current}/${g.max})</div></div>`; } });
-            
-            // 搜其它
-            for(let i=0; i<localStorage.length; i++) {
-                let k = localStorage.key(i); if(!k.startsWith('okr_v1_') && !k.startsWith('activities_v9_')) continue;
-                if(k.endsWith('_images')) continue;
-                
-                let dm = k.match(/(\d{4})_(\d{1,2})_(\d{1,2})/); if(!dm) continue;
-                let dStr = `${dm[1]}年${dm[2]}月${dm[3]}日`; let jD = `${dm[1]}-${dm[2].padStart(2,'0')}-${dm[3].padStart(2,'0')}`;
-                
-                let val = localStorage.getItem(k) || "";
-                if(k.includes('_diary') && val.toLowerCase().includes(kw)) { c++; hD += `<div class="search-res-item" onclick="jumpToSearchResult('${jD}')"><div class="search-res-date">📔 ${dStr}</div><div>${val}</div></div>`; }
-                else if(k.includes('_reflection') && val.toLowerCase().includes(kw)) { c++; hR += `<div class="search-res-item" onclick="jumpToSearchResult('${jD}')"><div class="search-res-date">🧠 ${dStr}</div><div>${val}</div></div>`; }
-                else if(!k.includes('_')) {
-                    JSON.parse(val).forEach(a => { 
-                        if((a.actual&&a.actual.toLowerCase().includes(kw)) || (a.planned&&a.planned.toLowerCase().includes(kw))) { 
-                            c++; hA += `<div class="search-res-item" onclick="jumpToSearchResult('${jD}')"><div class="search-res-date">✅ ${dStr} ${a.time}</div><div>计划: ${a.planned||'无'} | 实际: ${a.actual||'无'}</div></div>`; 
-                        } 
-                    });
-                }
-            }
-            if(c===0) { res.innerHTML = '<p style="color:gray; font-size: 13px;">无结果</p>'; }
-            else { res.innerHTML = (hG?`<div class="search-cat-title">目标匹配</div>${hG}`:'') + (hA?`<div class="search-cat-title">阵地匹配</div>${hA}`:'') + (hD?`<div class="search-cat-title">日记匹配</div>${hD}`:'') + (hR?`<div class="search-cat-title">复盘匹配</div>${hR}`:''); }
-        }
-        function jumpToSearchResult(dStr) { closeModal('searchModal'); document.getElementById('datePicker').value = dStr; jumpToDate(); }
-
-        // ==========================================
-        // 云端同步引擎 (100% 实打实的 Fetch API)
-        // ==========================================
-        function openCloud() { 
-            document.getElementById('cloudModal').style.display='flex'; 
-            const t=localStorage.getItem('gh_sync_token'); 
-            document.getElementById('cloudSetup').style.display=t?'none':'block'; 
-            document.getElementById('cloudActions').style.display=t?'block':'none'; 
-        }
-        function saveCloudToken() { localStorage.setItem('gh_sync_token', document.getElementById('ghTokenInput').value.trim()); openCloud(); }
-        function clearCloudToken() { localStorage.removeItem('gh_sync_token'); openCloud(); }
-        
-        async function getGist(t) { 
-            try { 
-                let r = await fetch('https://api.github.com/gists', { headers:{'Authorization':`token ${t}`} }); 
-                if(!r.ok) return null;
-                let gists = await r.json();
-                return gists.find(g => g.description === '22408_App_Sync_Data'); 
-            } catch(e) { return null; } 
-        }
-        
-        async function syncUpload() {
-            let t = localStorage.getItem('gh_sync_token'); 
-            if(!t) return alert("请先绑定 Token");
-            let btn = document.getElementById('btnUpload'); btn.innerText = "☁️ 正在上传..."; btn.disabled = true;
-            
-            let d = {}; 
-            for(let i=0; i<localStorage.length; i++) { 
-                let k=localStorage.key(i); 
-                if(k!=='gh_sync_token' && k!=='gemini_api_key') d[k]=localStorage.getItem(k); 
-            }
-            
-            try {
-                let gist = await getGist(t); 
-                let body = JSON.stringify({ description:"22408_App_Sync_Data", public:false, files:{"sync_data.json":{content:JSON.stringify(d)}} });
-                let url = gist ? `https://api.github.com/gists/${gist.id}` : 'https://api.github.com/gists';
-                let method = gist ? 'PATCH' : 'POST';
-                
-                let r = await fetch(url, { method: method, headers:{'Authorization':`token ${t}`, 'Content-Type': 'application/json'}, body: body });
-                if(r.ok) alert('✅ 成功备份到云端数据库！'); else alert('❌ 备份失败，检查Token权限或网络');
-            } catch(e) { alert('网络连接断开，请检查网络'); }
-            
-            btn.innerText = "⬆️ 备份数据到云端"; btn.disabled = false;
-        }
-
-        async function syncDownload() {
-            let t = localStorage.getItem('gh_sync_token'); 
-            let btn = document.getElementById('btnDownload'); btn.innerText = "☁️ 正在下载..."; btn.disabled = true;
-            
-            try {
-                let gist = await getGist(t); 
-                if(!gist) { alert('❌ 云端没有找到名为 22408_App_Sync_Data 的备份'); btn.innerText = "⬇️ 从云端下载覆盖本机"; btn.disabled = false; return; }
-                
-                let r = await fetch(gist.files["sync_data.json"].raw_url); 
-                let d = await r.json();
-                
-                if(confirm('⚠️ 警告：下载将用云端数据覆盖当前设备的全部数据！继续吗？')) { 
-                    Object.keys(d).forEach(k => localStorage.setItem(k, d[k])); 
-                    alert('✅ 同步成功！控制台即将重启。');
-                    location.reload(); 
-                }
-            } catch(e) { alert('下载失败或云端数据解析异常'); }
-            
-            btn.innerText = "⬇️ 从云端下载覆盖本机"; btn.disabled = false;
-        }
-
-        // ==========================================
-        // 🧠 真正的 Gemini AI 战略导师底层请求
-        // ==========================================
-        async function callAIMentor(mode) {
-            let btn = document.getElementById(mode==='daily'?'aiBtnDaily':'aiBtnWeekly'); 
-            let aiBox = document.getElementById('aiResponseCard');
-            let reflection = document.getElementById('reflectionInput').value.trim();
-            
-            let k = localStorage.getItem('gemini_api_key'); 
-            if(!k) { 
-                k = prompt('首次唤醒导师，请输入你的 Gemini API Key：'); 
-                if(!k) return;
-                localStorage.setItem('gemini_api_key', k.trim()); 
-            }
-
-            btn.innerText = "🧠 脑波连线中..."; btn.disabled = true;
-            
-            let goalStatus = okrGoals.map(g => `[${g.type==='month'?'大':(g.type==='week'?'中':'小')}] ${g.name} (${g.current}/${g.max})`).join('; ');
-            let promptText = mode === 'daily' 
-                ? `你现在是严厉的考研导师。当前用户目标进度：【${goalStatus}】。他今天的复盘：【${reflection||'无'}】。请简短评价他今天是否有力推进了目标，并给出明日一句话死命令。不要超过100字。` 
-                : `你现在是考研战略规划师。用户本周复盘：【${reflection||'无'}】。全局目标：【${goalStatus}】。请进行深度复盘（Markdown排版）：1.小目标支撑度评估与烂尾风险；2. 下周的战略倾斜建议。`;
-
-            try {
-                let r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${k}`, { 
-                    method:'POST', 
-                    headers: {'Content-Type': 'application/json'},
-                    body:JSON.stringify({contents:[{parts:[{text:promptText}]}]}) 
-                });
-                let d = await r.json(); 
-                
-                if(d.candidates) {
-                    aiBox.innerHTML = `<strong>导师反馈：</strong><br><br>` + d.candidates[0].content.parts[0].text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-                    aiBox.style.display='block';
-                } else if(d.error) {
-                    alert("导师连线失败：" + d.error.message);
-                    if(d.error.code === 400 || d.error.message.includes("API key")) localStorage.removeItem('gemini_api_key');
-                }
-            } catch(e) { 
-                alert('网络封锁，无法连接到导师接口。'); 
-            } 
-            
-            btn.innerText = mode==='daily'?"🌙 睡前小结":"📊 战略复盘"; 
-            btn.disabled = false;
-        }
-    </script>
-</body>
-</html>
-
+            document.getElementById('diaryInput').value = localStorage.getItem(key+'_diary
