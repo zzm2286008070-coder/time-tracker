@@ -16,6 +16,7 @@
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); margin: 0; padding: 20px; color: var(--text-main); padding-bottom: 50px; -webkit-touch-callout: none;}
         
         .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+        h1 { font-size: 22px; margin: 0; }
         .week-badge { background: #1c1c1e; color: white; padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: bold; margin-top: 5px; display: inline-block;}
         .top-tools { display: flex; flex-direction: column; align-items: flex-end; gap: 10px;}
         .icon-btn-group { display: flex; gap: 10px; }
@@ -80,7 +81,7 @@
 
     <div class="header">
         <div>
-            <h1 id="appTitle">🚀 控制台</h1>
+            <h1>🚀 控制台</h1>
             <div class="week-badge" id="weekDisplay">计算中...</div>
         </div>
         <div class="top-tools">
@@ -98,7 +99,7 @@
     </div>
 
     <div class="card" style="border: 2px solid #34c759;">
-        <h2>🎯 战略目标体系 <span style="font-size: 10px; color: gray; font-weight:normal;">长按可删除</span></h2>
+        <h2>🎯 战略目标体系 <span style="font-size: 10px; color: gray; font-weight:normal;">长按项目可删除</span></h2>
         <div class="okr-section">
             <div class="okr-title">🏆 大目标 (灵活战略)</div>
             <div class="prog-container" id="monthGoalsContainer"></div>
@@ -158,7 +159,7 @@
             <input type="number" id="goalMax" value="1" min="1">
             <div id="parentGoalContainer">
                 <label style="font-size: 12px; color: gray;">关联上级目标：</label>
-                <select id="goalParent"></select>
+                <select id="goalParent"><option value="">不关联，独立目标</option></select>
             </div>
             <button class="main-btn" onclick="saveNewGoal()">确立目标</button>
             <button class="main-btn" onclick="closeModal('goalModal')" style="background:#e5e5ea; color:#1c1c1e;">取消</button>
@@ -168,53 +169,109 @@
     <div class="modal" id="recordModal">
         <div class="modal-content">
             <h3 style="margin-top:0;">阵地记录</h3>
-            <label style="font-size: 12px; color: gray;">课表计划：</label>
+            <label style="font-size: 12px; color: gray;">课表计划 (可修改)：</label>
             <input type="text" id="plannedInput">
-            <label style="font-size: 12px; color: gray;">实际执行：</label>
+            <label style="font-size: 12px; color: gray;">实际执行 (可留空)：</label>
             <input type="text" id="actualInput">
-            <label style="font-size: 12px; color: gray;">标签：</label>
+            <label style="font-size: 12px; color: gray;">标签 (可取消选择)：</label>
             <div class="tag-group">
                 <button class="tag-btn" onclick="selectTag('💻 硬核')">💻 硬核</button>
                 <button class="tag-btn" onclick="selectTag('🛡️ 防御')">🛡️ 防御</button>
                 <button class="tag-btn" onclick="selectTag('💧 纯水')">💧 纯水</button>
             </div>
-            <button class="main-btn" onclick="saveActivity()">保存</button>
+            <button class="main-btn" onclick="saveActivity()">保存记录</button>
             <button class="main-btn" onclick="closeModal('recordModal')" style="background:#e5e5ea; color:#1c1c1e;">取消</button>
         </div>
     </div>
 
-    <div class="modal" id="searchModal"><div class="modal-content"><h3>🔍 搜索</h3><input type="text" id="searchInput" onkeyup="performSearch()"><div id="searchResults"></div><button class="main-btn" onclick="closeModal('searchModal')">关闭</button></div></div>
-    <div class="modal" id="cloudModal"><div class="modal-content"><h3>☁️ 云同步</h3><div id="cloudSetup"><input type="password" id="ghTokenInput" placeholder="ghp_ Token"><button class="main-btn" onclick="saveCloudToken()">绑定</button></div><div id="cloudActions"><button class="main-btn" onclick="syncUpload()">备份</button><button class="main-btn" style="background:#ff9500" onclick="syncDownload()">下载</button><button class="main-btn" style="background:none;color:red" onclick="clearCloudToken()">解绑</button></div><button class="main-btn" onclick="closeModal('cloudModal')">关闭</button></div></div>
+    <div class="modal" id="searchModal">
+        <div class="modal-content">
+            <h3 style="margin-top:0;">🔍 分类检索</h3>
+            <input type="text" id="searchInput" placeholder="搜索关键词..." onkeyup="performSearch()">
+            <div id="searchResults" style="margin-top: 15px; max-height: 350px; overflow-y: auto;"></div>
+            <button class="main-btn" onclick="closeModal('searchModal')" style="background:#e5e5ea; color:#1c1c1e; margin-top: 15px;">关闭</button>
+        </div>
+    </div>
+
+    <div class="modal" id="cloudModal">
+        <div class="modal-content">
+            <h3 style="margin-top:0; color: #007aff;">☁️ 云端数据库同步</h3>
+            <div id="cloudSetup" style="display:none;">
+                <p style="font-size: 12px; color: gray;">请输入 GitHub Gist Token 绑定</p>
+                <input type="password" id="ghTokenInput" placeholder="ghp_xxxx">
+                <button class="main-btn" onclick="saveCloudToken()">🔗 连接数据库</button>
+            </div>
+            <div id="cloudActions" style="display:none;">
+                <div style="background: #e8f8f5; padding: 10px; border-radius: 8px; margin-bottom: 15px;">
+                    <span style="font-size: 14px; color: #34c759; font-weight: bold;">✅ 数据库已连接</span>
+                </div>
+                <button id="btnUpload" class="main-btn" onclick="syncUpload()">⬆️ 备份数据到云端</button>
+                <button id="btnDownload" class="main-btn" style="background: #ff9500;" onclick="syncDownload()">⬇️ 从云端下载覆盖本机</button>
+                <button class="main-btn" style="background: white; color: #ff3b30; border: 1px solid #ff3b30; margin-top: 20px;" onclick="clearCloudToken()">解绑当前设备</button>
+            </div>
+            <button class="main-btn" onclick="closeModal('cloudModal')" style="background:#e5e5ea; color:#1c1c1e;">关闭</button>
+        </div>
+    </div>
 
     <script>
+        // ==========================================
+        // 核心时间与数据初始化
+        // ==========================================
         const semesterStart = new Date('2026-03-02T00:00:00');
-        let viewedDate = new Date(); let okrGoals = JSON.parse(localStorage.getItem('okr_goals')) || [];
+        let viewedDate = new Date(); 
+        let todayDate = new Date(); 
+        let okrGoals = JSON.parse(localStorage.getItem('okr_goals')) || [ { id: 'g_m1', name: '大目标示例：逻辑学导论', type: 'month', current: 0, max: 17, parentId: '', targetWeek: null, targetDate: null } ];
         let pressTimer; let currentPressId = null; let currentSlotIndex = -1; let selectedTag = "";
 
+        const eveningSlots = [ {time:"19:00", session:"黄金期上", planned:"课后复习"}, {time:"21:00", session:"黄金期下", planned:"总结提升"} ];
         const mySchedule = {
-            1: [{time:"08:00", session:"1-2节", planned:"常规课"}, {time:"10:00", session:"3-4节", planned:"常规课"}, {time:"14:00", session:"7-8节", planned:"常规课"}, {time:"16:00", session:"9-10节", planned:"常规课"}, {time:"19:00", session:"晚上", planned:"自习"}],
-            2: [{time:"08:00", session:"1-2节", planned:"常规课"}, {time:"10:00", session:"3-4节", planned:"常规课"}, {time:"14:00", session:"7-8节", planned:"常规课"}, {time:"16:00", session:"9-10节", planned:"常规课"}, {time:"19:00", session:"晚上", planned:"自习"}],
-            3: [{time:"08:00", session:"1-2节", planned:"常规课"}, {time:"10:00", session:"3-4节", planned:"常规课"}, {time:"14:00", session:"下午", planned:"羽毛球"}, {time:"19:00", session:"晚上", planned:"自习"}],
-            4: [{time:"08:00", session:"1-2节", planned:"常规课"}, {time:"10:00", session:"3-4节", planned:"英语"}, {time:"14:00", session:"下午", planned:"自习"}, {time:"19:00", session:"晚上", planned:"自习"}],
-            5: [{time:"08:00", session:"上午", planned:"自习"}, {time:"14:00", session:"下午", planned:"自习"}, {time:"16:00", session:"9-10节", planned:"常规课"}, {time:"19:00", session:"晚上", planned:"自习"}],
-            6: [{time:"全天", session:"周末", planned:"战略推进"}], 0: [{time:"全天", session:"周末", planned:"战略推进"}]
+            1: [{time:"08:00", session:"1-2节", planned:"常规课"}, {time:"10:00", session:"3-4节", planned:"常规课"}, {time:"14:00", session:"7-8节", planned:"常规课"}, {time:"16:00", session:"9-10节", planned:"常规课"}, ...eveningSlots],
+            2: [{time:"08:00", session:"1-2节", planned:"常规课"}, {time:"10:00", session:"3-4节", planned:"常规课"}, {time:"14:00", session:"7-8节", planned:"常规课"}, {time:"16:00", session:"9-10节", planned:"常规课"}, ...eveningSlots],
+            3: [{time:"08:00", session:"1-2节", planned:"常规课"}, {time:"10:00", session:"3-4节", planned:"常规课"}, {time:"14:00", session:"7-8节", planned:"羽毛球"}, {time:"16:00", session:"9-10节", planned:"常规课"}, ...eveningSlots],
+            4: [{time:"08:00", session:"1-2节", planned:"常规课"}, {time:"10:00", session:"3-4节", planned:"大学英语"}, {time:"14:00", session:"下午", planned:"无课"}, ...eveningSlots],
+            5: [{time:"08:00", session:"1-2节", planned:"常规课"}, {time:"10:00", session:"上午", planned:"无课"}, {time:"14:00", session:"7-8节", planned:"无课"}, {time:"16:00", session:"9-10节", planned:"常规课"}, ...eveningSlots],
+            6: [{time:"全天", session:"周末", planned:"战略推进"}, ...eveningSlots], 0: [{time:"全天", session:"周末", planned:"战略推进"}, ...eveningSlots]
         };
 
         window.onload = function() { updateUIForDate(); }
 
-        // --- OKR 逻辑修复 ---
+        function getWeekNum(d) { let diff = Math.floor((d - semesterStart) / 86400000); return Math.floor(diff / 7) + 1; }
+        function getDateStr(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+        function getStorageKey(d) { return `okr_v1_${d.getFullYear()}_${d.getMonth()+1}_${d.getDate()}`; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        // ==========================================
+        // OKR 敏捷目标系统引擎
+        // ==========================================
+        function saveGoals() { localStorage.setItem('okr_goals', JSON.stringify(okrGoals)); }
+
         function renderGoals() {
-            const currentW = getWeekNum(viewedDate); const currentD = getDateStr(viewedDate);
+            const currentW = getWeekNum(viewedDate); 
+            const currentD = getDateStr(viewedDate);
+            
             const render = (type, id) => {
                 const container = document.getElementById(id); container.innerHTML = '';
-                const list = okrGoals.filter(g => type==='month' ? g.type==='month' : (type==='week' ? g.type==='week' && g.targetWeek === currentW : g.targetDate === currentD));
-                if(!list.length) { container.innerHTML = '<p style="color:#ccc;font-size:12px;margin:0">暂无项目</p>'; return; }
+                const list = okrGoals.filter(g => type==='month' ? g.type==='month' : (type==='week' ? g.type==='week' && g.targetWeek === currentW : g.type==='day' && g.targetDate === currentD));
+                
+                if(!list.length) { container.innerHTML = '<p style="color:#ccc;font-size:12px;margin:0;font-style:italic;">暂无目标</p>'; return; }
+                
                 list.forEach(g => {
                     let pct = (g.current / g.max) * 100;
-                    container.innerHTML += `<div class="prog-item" id="${g.id}" onmousedown="startP('${g.id}')" ontouchstart="startP('${g.id}')" onmouseup="stopP()" ontouchend="stopP()"><div class="prog-header"><span>${g.name}</span><span>${g.current}/${g.max}</span></div><div class="prog-track"><div class="prog-fill ${type}" style="width:${pct}%"></div></div><div class="prog-actions"><span style="font-size:10px;color:gray">${g.parentId ? '🔗 有关联':''}</span><div><button class="mini-btn" onclick="updateG('${g.id}',-1,event)">-1</button><button class="mini-btn" onclick="updateG('${g.id}',1,event)">+1</button></div></div></div>`;
+                    container.innerHTML += `
+                        <div class="prog-item" id="${g.id}" onmousedown="startP('${g.id}')" ontouchstart="startP('${g.id}')" onmouseup="stopP()" ontouchend="stopP()">
+                            <div class="prog-header"><span>${g.name}</span><span>${g.current}/${g.max}</span></div>
+                            <div class="prog-track"><div class="prog-fill ${type}" style="width:${pct}%"></div></div>
+                            <div class="prog-actions">
+                                <span style="font-size:10px;color:gray">${g.parentId ? '🔗 有关联':''}</span>
+                                <div><button class="mini-btn" onclick="updateG('${g.id}',-1,event)">-1</button>
+                                <button class="mini-btn" onclick="updateG('${g.id}',1,event)">+1</button></div>
+                            </div>
+                        </div>`;
                 });
             };
-            render('month', 'monthGoalsContainer'); render('week', 'weekGoalsContainer'); render('day', 'dayGoalsContainer');
+            render('month', 'monthGoalsContainer'); 
+            render('week', 'weekGoalsContainer'); 
+            render('day', 'dayGoalsContainer');
         }
 
         function openGoalModal() { 
@@ -232,32 +289,60 @@
                 document.getElementById('parentGoalContainer').style.display = 'block';
                 const currentW = getWeekNum(viewedDate);
                 okrGoals.filter(g => lvl==='week' ? g.type==='month' : (g.type==='month' || (g.type==='week' && g.targetWeek === currentW))).forEach(p => {
-                    pS.innerHTML += `<option value="${p.id}">${p.name}</option>`;
+                    pS.innerHTML += `<option value="${p.id}">${p.name} (${p.type==='month'?'月':'周'})</option>`;
                 });
             }
         }
 
         function saveNewGoal() {
             const n = document.getElementById('goalName').value.trim(); const m = parseInt(document.getElementById('goalMax').value);
-            if(!n || m <= 0) return alert('请填写完整！');
+            if(!n || m <= 0) return alert('请填写有效的目标名称和任务量！');
             okrGoals.push({ id:'g_'+Date.now(), type:document.getElementById('goalLevel').value, name:n, max:m, current:0, parentId:document.getElementById('goalParent').value, targetWeek:getWeekNum(viewedDate), targetDate:getDateStr(viewedDate) });
-            localStorage.setItem('okr_goals', JSON.stringify(okrGoals)); renderGoals(); closeModal('goalModal');
+            saveGoals(); renderGoals(); closeModal('goalModal');
         }
 
-        function updateG(id, d, e) { e.stopPropagation(); const add = (gid, val) => { let g = okrGoals.find(x => x.id === gid); if(!g) return; g.current = Math.min(Math.max(g.current+val, 0), g.max); if(g.parentId && val > 0) add(g.parentId, 1); }; add(id, d); localStorage.setItem('okr_goals', JSON.stringify(okrGoals)); renderGoals(); }
-        function startP(id) { currentPressId = id; document.getElementById(id).classList.add('long-pressing'); pressTimer = setTimeout(() => { if(confirm('删除此目标？')) { okrGoals = okrGoals.filter(x => x.id !== id); localStorage.setItem('okr_goals', JSON.stringify(okrGoals)); renderGoals(); } }, 800); }
-        function stopP() { clearTimeout(pressTimer); if(currentPressId) document.getElementById(currentPressId).classList.remove('long-pressing'); }
+        function updateG(id, d, e) { 
+            e.stopPropagation(); 
+            const add = (gid, val) => { 
+                let g = okrGoals.find(x => x.id === gid); if(!g) return; 
+                g.current = Math.min(Math.max(g.current+val, 0), g.max); 
+                if(g.parentId && val > 0) add(g.parentId, 1); 
+            }; 
+            add(id, d); saveGoals(); renderGoals(); 
+        }
 
-        // --- 阵地记录逻辑 ---
+        function startP(id) { 
+            currentPressId = id; document.getElementById(id).classList.add('long-pressing'); 
+            pressTimer = setTimeout(() => { 
+                if(confirm('警告：确认要彻底删除这个目标吗？\n下级绑定的目标也会被解除关联。')) { 
+                    okrGoals.forEach(child => { if(child.parentId === id) child.parentId = ''; });
+                    okrGoals = okrGoals.filter(x => x.id !== id); 
+                    saveGoals(); renderGoals(); 
+                } 
+            }, 800); 
+        }
+        function stopP() { clearTimeout(pressTimer); if(currentPressId) { let el = document.getElementById(currentPressId); if(el) el.classList.remove('long-pressing'); currentPressId = null; } }
+
+        // ==========================================
+        // UI 渲染与阵地记录引擎 (无强制限制版)
+        // ==========================================
+        function changeDate(o) { viewedDate.setDate(viewedDate.getDate()+o); updateUIForDate(); }
+        function jumpToDate() { viewedDate = new Date(document.getElementById('datePicker').value); updateUIForDate(); }
+        
         function updateUIForDate() {
             document.getElementById('datePicker').value = getDateStr(viewedDate);
-            const wN = getWeekNum(viewedDate); document.getElementById('weekDisplay').innerText = wN > 0 ? `⚔️ 挑战期 • 第 ${wN} 周` : "⚔️ 蓄力准备期";
+            const wN = getWeekNum(viewedDate); 
+            document.getElementById('weekDisplay').innerText = wN > 0 ? `⚔️ 挑战期 • 第 ${wN} 周` : "⚔️ 蓄力准备期";
+            document.getElementById('weekGoalTitle').innerText = wN > 0 ? `🚩 中目标 (第 ${wN} 周)` : "🚩 中目标 (蓄力期)";
             document.getElementById('dateDisplay').innerText = `${viewedDate.getMonth()+1}月${viewedDate.getDate()}日`;
+            
             const key = getStorageKey(viewedDate);
             document.getElementById('diaryInput').value = localStorage.getItem(key+'_diary') || "";
             document.getElementById('diaryInput').oninput = (e) => localStorage.setItem(key+'_diary', e.target.value);
             document.getElementById('reflectionInput').value = localStorage.getItem(key+'_reflection') || "";
             document.getElementById('reflectionInput').oninput = (e) => localStorage.setItem(key+'_reflection', e.target.value);
+            
+            document.getElementById('aiResponseCard').style.display = 'none';
             renderGoals(); loadTimeline(); calculateStats();
         }
 
@@ -266,57 +351,187 @@
             const data = saved ? JSON.parse(saved) : mySchedule[viewedDate.getDay()].map(x => ({...x, actual:"", tag:""}));
             const container = document.getElementById('timelineContainer'); container.innerHTML = '';
             data.forEach((s, idx) => {
-                container.innerHTML += `<div class="time-slot" onclick="openRec(${idx})"><div class="time-label">${s.time}<span>${s.session}</span></div><div class="slot-content"><div class="planned">🗓️ ${s.planned || '无计划'}</div><div class="actual">${s.tag ? `<span class="tag">${s.tag}</span>` : ''}${s.actual || '点击记录'}</div></div></div>`;
+                container.innerHTML += `<div class="time-slot" onclick="openRec(${idx})"><div class="time-label">${s.time}<span>${s.session}</span></div><div class="slot-content"><div class="planned">🗓️ ${s.planned || '无计划'}</div><div class="actual">${s.tag ? `<span class="tag">${s.tag}</span>` : ''}${s.actual || '<span style="color:#ccc;">点击修改/记录</span>'}</div></div></div>`;
             }); localStorage.setItem(key, JSON.stringify(data));
         }
 
         function openRec(idx) {
             currentSlotIndex = idx; const d = JSON.parse(localStorage.getItem(getStorageKey(viewedDate)))[idx];
-            document.getElementById('plannedInput').value = d.planned; document.getElementById('actualInput').value = d.actual;
-            selectedTag = d.tag; document.querySelectorAll('.tag-btn').forEach(b => b.classList.toggle('selected', b.innerText === selectedTag));
+            document.getElementById('plannedInput').value = d.planned || ""; 
+            document.getElementById('actualInput').value = d.actual || "";
+            selectedTag = d.tag || ""; 
+            document.querySelectorAll('.tag-btn').forEach(b => b.classList.toggle('selected', b.innerText === selectedTag));
             document.getElementById('recordModal').style.display = 'flex';
         }
-        function selectTag(t) { selectedTag = selectedTag === t ? "" : t; document.querySelectorAll('.tag-btn').forEach(b => b.classList.toggle('selected', b.innerText === selectedTag)); }
+
+        function selectTag(t) { 
+            selectedTag = selectedTag === t ? "" : t; 
+            document.querySelectorAll('.tag-btn').forEach(b => b.classList.toggle('selected', b.innerText === selectedTag)); 
+        }
+
         function saveActivity() {
             const key = getStorageKey(viewedDate); let d = JSON.parse(localStorage.getItem(key));
             d[currentSlotIndex] = { ...d[currentSlotIndex], planned: document.getElementById('plannedInput').value.trim(), actual: document.getElementById('actualInput').value.trim(), tag: selectedTag };
             localStorage.setItem(key, JSON.stringify(d)); loadTimeline(); calculateStats(); closeModal('recordModal');
         }
 
-        // --- 通用工具 ---
-        function getWeekNum(d) { let diff = Math.floor((d - semesterStart) / 86400000); return Math.floor(diff / 7) + 1; }
-        function getDateStr(d) { return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
-        function getStorageKey(d) { return `okr_v1_${d.getFullYear()}_${d.getMonth()+1}_${d.getDate()}`; }
-        function changeDate(o) { viewedDate.setDate(viewedDate.getDate()+o); updateUIForDate(); }
-        function jumpToDate() { viewedDate = new Date(document.getElementById('datePicker').value); updateUIForDate(); }
-        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
         function calculateStats() {
-            let hc=0, df=0, ws=0; for(let i=0; i<7; i++){ let d = new Date(viewedDate); d.setDate(d.getDate()-i); let s = localStorage.getItem(getStorageKey(d)); if(s) JSON.parse(s).forEach(x=>{ if(x.tag==='💻 硬核')hc++; if(x.tag==='🛡️ 防御')df++; if(x.tag==='💧 纯水')ws++; }); }
+            let hc=0, df=0, ws=0; 
+            for(let i=0; i<7; i++){ 
+                let d = new Date(viewedDate); d.setDate(d.getDate()-i); let s = localStorage.getItem(getStorageKey(d)); 
+                if(s) JSON.parse(s).forEach(x=>{ if(x.tag==='💻 硬核')hc++; if(x.tag==='🛡️ 防御')df++; if(x.tag==='💧 纯水')ws++; }); 
+            }
             document.getElementById('statHardcore').innerText=hc; document.getElementById('statDefense').innerText=df; document.getElementById('statWaste').innerText=ws;
         }
 
-        // --- 搜索 & 云同步 (极简保持) ---
-        function openSearch() { document.getElementById('searchModal').style.display='flex'; }
+        // ==========================================
+        // 分类检索引擎
+        // ==========================================
+        function openSearch() { document.getElementById('searchModal').style.display='flex'; document.getElementById('searchInput').focus(); }
+        
         function performSearch() {
-            let kw = document.getElementById('searchInput').value.toLowerCase().trim(); const res = document.getElementById('searchResults'); res.innerHTML = ''; if(!kw) return;
-            okrGoals.forEach(g => { if(g.name.toLowerCase().includes(kw)) res.innerHTML += `<div class="search-res-item">🎯 ${g.name}</div>`; });
+            let kw = document.getElementById('searchInput').value.toLowerCase().trim(); const res = document.getElementById('searchResults'); res.innerHTML = ''; 
+            if(!kw) { res.innerHTML = '<p style="color:gray; font-size: 13px;">输入内容开始搜索...</p>'; return; }
+            
+            let hG='', hA='', hD='', hR=''; let c=0;
+            
+            // 搜目标
+            okrGoals.forEach(g => { if(g.name.toLowerCase().includes(kw)) { c++; hG += `<div class="search-res-item" onclick="closeModal('searchModal')"><div class="search-res-date">🎯 ${g.type==='month'?'大目标':(g.type==='week'?'中目标':'小目标')}</div><div>${g.name} (${g.current}/${g.max})</div></div>`; } });
+            
+            // 搜其它
             for(let i=0; i<localStorage.length; i++) {
-                let k = localStorage.key(i); if(!k.startsWith('okr_v1_') || k.includes('_')) continue;
-                JSON.parse(localStorage.getItem(k)).forEach(a => { if(a.actual.toLowerCase().includes(kw)) res.innerHTML += `<div class="search-res-item">✅ ${a.actual}</div>`; });
+                let k = localStorage.key(i); if(!k.startsWith('okr_v1_') && !k.startsWith('activities_v9_')) continue;
+                if(k.endsWith('_images')) continue;
+                
+                let dm = k.match(/(\d{4})_(\d{1,2})_(\d{1,2})/); if(!dm) continue;
+                let dStr = `${dm[1]}年${dm[2]}月${dm[3]}日`; let jD = `${dm[1]}-${dm[2].padStart(2,'0')}-${dm[3].padStart(2,'0')}`;
+                
+                let val = localStorage.getItem(k) || "";
+                if(k.includes('_diary') && val.toLowerCase().includes(kw)) { c++; hD += `<div class="search-res-item" onclick="jumpToSearchResult('${jD}')"><div class="search-res-date">📔 ${dStr}</div><div>${val}</div></div>`; }
+                else if(k.includes('_reflection') && val.toLowerCase().includes(kw)) { c++; hR += `<div class="search-res-item" onclick="jumpToSearchResult('${jD}')"><div class="search-res-date">🧠 ${dStr}</div><div>${val}</div></div>`; }
+                else if(!k.includes('_')) {
+                    JSON.parse(val).forEach(a => { 
+                        if((a.actual&&a.actual.toLowerCase().includes(kw)) || (a.planned&&a.planned.toLowerCase().includes(kw))) { 
+                            c++; hA += `<div class="search-res-item" onclick="jumpToSearchResult('${jD}')"><div class="search-res-date">✅ ${dStr} ${a.time}</div><div>计划: ${a.planned||'无'} | 实际: ${a.actual||'无'}</div></div>`; 
+                        } 
+                    });
+                }
             }
+            if(c===0) { res.innerHTML = '<p style="color:gray; font-size: 13px;">无结果</p>'; }
+            else { res.innerHTML = (hG?`<div class="search-cat-title">目标匹配</div>${hG}`:'') + (hA?`<div class="search-cat-title">阵地匹配</div>${hA}`:'') + (hD?`<div class="search-cat-title">日记匹配</div>${hD}`:'') + (hR?`<div class="search-cat-title">复盘匹配</div>${hR}`:''); }
         }
-        function openCloud() { document.getElementById('cloudModal').style.display='flex'; const t=localStorage.getItem('gh_sync_token'); document.getElementById('cloudSetup').style.display=t?'none':'block'; document.getElementById('cloudActions').style.display=t?'block':'none'; }
+        function jumpToSearchResult(dStr) { closeModal('searchModal'); document.getElementById('datePicker').value = dStr; jumpToDate(); }
+
+        // ==========================================
+        // 云端同步引擎 (100% 实打实的 Fetch API)
+        // ==========================================
+        function openCloud() { 
+            document.getElementById('cloudModal').style.display='flex'; 
+            const t=localStorage.getItem('gh_sync_token'); 
+            document.getElementById('cloudSetup').style.display=t?'none':'block'; 
+            document.getElementById('cloudActions').style.display=t?'block':'none'; 
+        }
         function saveCloudToken() { localStorage.setItem('gh_sync_token', document.getElementById('ghTokenInput').value.trim()); openCloud(); }
         function clearCloudToken() { localStorage.removeItem('gh_sync_token'); openCloud(); }
-        async function syncUpload() {
-            let t = localStorage.getItem('gh_sync_token'); if(!t) return;
-            let d = {}; for(let i=0; i<localStorage.length; i++){ let k=localStorage.key(i); if(k.startsWith('okr_')) d[k]=localStorage.getItem(k); }
-            let body = { description: "22408_App_Sync_Data", public: false, files: { "sync_data.json": { content: JSON.stringify(d) } } };
-            let r = await fetch('https://api.github.com/gists', { method: 'POST', headers: { 'Authorization': `token ${t}` }, body: JSON.stringify(body) });
-            alert(r.ok ? '备份成功' : '失败');
+        
+        async function getGist(t) { 
+            try { 
+                let r = await fetch('https://api.github.com/gists', { headers:{'Authorization':`token ${t}`} }); 
+                if(!r.ok) return null;
+                let gists = await r.json();
+                return gists.find(g => g.description === '22408_App_Sync_Data'); 
+            } catch(e) { return null; } 
         }
-        async function syncDownload() { alert('请参考Gist API实现下载逻辑'); }
-        async function callAIMentor(mode) { alert('AI接口已就绪，请输入API Key后调用'); }
+        
+        async function syncUpload() {
+            let t = localStorage.getItem('gh_sync_token'); 
+            if(!t) return alert("请先绑定 Token");
+            let btn = document.getElementById('btnUpload'); btn.innerText = "☁️ 正在上传..."; btn.disabled = true;
+            
+            let d = {}; 
+            for(let i=0; i<localStorage.length; i++) { 
+                let k=localStorage.key(i); 
+                if(k!=='gh_sync_token' && k!=='gemini_api_key') d[k]=localStorage.getItem(k); 
+            }
+            
+            try {
+                let gist = await getGist(t); 
+                let body = JSON.stringify({ description:"22408_App_Sync_Data", public:false, files:{"sync_data.json":{content:JSON.stringify(d)}} });
+                let url = gist ? `https://api.github.com/gists/${gist.id}` : 'https://api.github.com/gists';
+                let method = gist ? 'PATCH' : 'POST';
+                
+                let r = await fetch(url, { method: method, headers:{'Authorization':`token ${t}`, 'Content-Type': 'application/json'}, body: body });
+                if(r.ok) alert('✅ 成功备份到云端数据库！'); else alert('❌ 备份失败，检查Token权限或网络');
+            } catch(e) { alert('网络连接断开，请检查网络'); }
+            
+            btn.innerText = "⬆️ 备份数据到云端"; btn.disabled = false;
+        }
+
+        async function syncDownload() {
+            let t = localStorage.getItem('gh_sync_token'); 
+            let btn = document.getElementById('btnDownload'); btn.innerText = "☁️ 正在下载..."; btn.disabled = true;
+            
+            try {
+                let gist = await getGist(t); 
+                if(!gist) { alert('❌ 云端没有找到名为 22408_App_Sync_Data 的备份'); btn.innerText = "⬇️ 从云端下载覆盖本机"; btn.disabled = false; return; }
+                
+                let r = await fetch(gist.files["sync_data.json"].raw_url); 
+                let d = await r.json();
+                
+                if(confirm('⚠️ 警告：下载将用云端数据覆盖当前设备的全部数据！继续吗？')) { 
+                    Object.keys(d).forEach(k => localStorage.setItem(k, d[k])); 
+                    alert('✅ 同步成功！控制台即将重启。');
+                    location.reload(); 
+                }
+            } catch(e) { alert('下载失败或云端数据解析异常'); }
+            
+            btn.innerText = "⬇️ 从云端下载覆盖本机"; btn.disabled = false;
+        }
+
+        // ==========================================
+        // 🧠 真正的 Gemini AI 战略导师底层请求
+        // ==========================================
+        async function callAIMentor(mode) {
+            let btn = document.getElementById(mode==='daily'?'aiBtnDaily':'aiBtnWeekly'); 
+            let aiBox = document.getElementById('aiResponseCard');
+            let reflection = document.getElementById('reflectionInput').value.trim();
+            
+            let k = localStorage.getItem('gemini_api_key'); 
+            if(!k) { 
+                k = prompt('首次唤醒导师，请输入你的 Gemini API Key：'); 
+                if(!k) return;
+                localStorage.setItem('gemini_api_key', k.trim()); 
+            }
+
+            btn.innerText = "🧠 脑波连线中..."; btn.disabled = true;
+            
+            let goalStatus = okrGoals.map(g => `[${g.type==='month'?'大':(g.type==='week'?'中':'小')}] ${g.name} (${g.current}/${g.max})`).join('; ');
+            let promptText = mode === 'daily' 
+                ? `你现在是严厉的考研导师。当前用户目标进度：【${goalStatus}】。他今天的复盘：【${reflection||'无'}】。请简短评价他今天是否有力推进了目标，并给出明日一句话死命令。不要超过100字。` 
+                : `你现在是考研战略规划师。用户本周复盘：【${reflection||'无'}】。全局目标：【${goalStatus}】。请进行深度复盘（Markdown排版）：1.小目标支撑度评估与烂尾风险；2. 下周的战略倾斜建议。`;
+
+            try {
+                let r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${k}`, { 
+                    method:'POST', 
+                    headers: {'Content-Type': 'application/json'},
+                    body:JSON.stringify({contents:[{parts:[{text:promptText}]}]}) 
+                });
+                let d = await r.json(); 
+                
+                if(d.candidates) {
+                    aiBox.innerHTML = `<strong>导师反馈：</strong><br><br>` + d.candidates[0].content.parts[0].text.replace(/\n/g, '<br>').replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+                    aiBox.style.display='block';
+                } else if(d.error) {
+                    alert("导师连线失败：" + d.error.message);
+                    if(d.error.code === 400 || d.error.message.includes("API key")) localStorage.removeItem('gemini_api_key');
+                }
+            } catch(e) { 
+                alert('网络封锁，无法连接到导师接口。'); 
+            } 
+            
+            btn.innerText = mode==='daily'?"🌙 睡前小结":"📊 战略复盘"; 
+            btn.disabled = false;
+        }
     </script>
 </body>
 </html>
